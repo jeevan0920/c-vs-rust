@@ -157,3 +157,118 @@ int main(int argc, char * argv[])
     return 0;
 }
 ```
+
+## Avoid vulnerablites using Rust
+
+Rust language features inherently prevent common vulnerabilities present in C/C++ code. Rust's safety features include ownership rules, borrowing, and lifetimes, which eliminate many bugs that are common in systems programming.
+
+### 1. Buffer Under/Overflow
+
+#### C/C++ Vulnerability:
+```c
+char *dataBuffer = (char *)ALLOCA(100*sizeof(char));
+data = dataBuffer - 8;
+strcpy(data, source);
+```
+In C/C++, buffer underflows and overflows are possible due to direct memory management.
+
+#### Rust Solution:
+Rust prevents buffer overflows using automatic bounds checking. Accessing memory outside the bounds of an array will result in a panic at runtime, stopping the execution safely.
+
+```rust
+let mut data_buffer = vec![0u8; 100];
+let data = &mut data_buffer[8..]; // Safely slicing, panic if out of bounds.
+```
+
+### 2. Use of Null Pointers
+
+#### C/C++ Vulnerability:
+```c
+data = (char *)calloc(100, sizeof(char));
+strcpy(data, "A String");
+```
+Using pointers that may be null after a failed memory allocation can lead to crashes.
+
+#### Rust Solution:
+Rust uses `Option<T>` for values that can be absent (null equivalent). The compiler enforces checks for `None` before using the value.
+
+```rust
+let data = vec![0u8; 100];
+let data_str = "A String".as_bytes();
+data.clone_from_slice(data_str); // Panic if sizes don't match.
+```
+
+### 3. Hardcoded Sensitive Data
+
+#### C/C++ Vulnerability:
+```c
+char *password = PASSWORD;
+```
+Storing sensitive information in plaintext can be extracted using binary analysis.
+
+#### Rust Solution:
+Use environment variables or encrypted secrets management. Rust can leverage libraries like `dotenv` and `secrecy` to handle sensitive data securely. Similar safety measures can indeed be implemented in C, but they often require more explicit coding discipline and third-party libraries to achieve the same level of security and robustness that Rust provides by default.
+
+```rust
+use std::env;
+use secrecy::{Secret, ExposeSecret};
+
+let password = env::var("PASSWORD").expect("Expected a password in the environment");
+let secret_password = Secret::new(password);
+```
+
+### 4. Use-After-Free
+
+#### C/C++ Vulnerability:
+```c
+free(data);
+```
+Memory can be accessed after it has been freed, leading to undefined behavior.
+
+#### Rust Solution:
+Rust's ownership system ensures that once an object goes out of scope, its memory is safely freed and cannot be accessed afterward.
+
+```rust
+{
+    let data = vec![0u8; 20];
+} // `data` is dropped here, any further access is a compile-time error.
+```
+
+### 5. Infinite Loops
+
+#### C/C++ Vulnerability:
+```c
+do {
+    // Infinite loop
+} while(i >= 0);
+```
+Infinite loops can occur due to logical errors in condition checks.
+
+#### Rust Solution:
+Rust can prevent unintended infinite loops through features like iterators for bounded loops (e.g., for i in 0..256). These features help reduce the risk of loops that unintentionally become infinite due to logic errors, like mismanaged loop conditions that are common in C and C++. Rust's type system and error handling also contribute to catching some of the common mistakes that lead to such scenarios.
+
+```rust
+for i in 0..256 {
+    println!("{}", i);
+}
+```
+
+### 6. Improper Error Handling
+
+#### C/C++ Vulnerability:
+```c
+if (fgets(data, 100, stdin) < 0)
+```
+Improper handling of I/O operations can lead to unexpected behavior.
+
+#### Rust Solution:
+Rust uses `Result<T, E>` for error handling, making it mandatory to handle errors through pattern matching or error propagation.
+
+```rust
+use std::io;
+let mut data = String::new();
+io::stdin().read_line(&mut data).expect("Failed to read line");
+```
+
+### Conclusion
+By switching to Rust and utilizing its comprehensive safety and error handling features, many common security issues in system programming can be mitigated, leading to more robust and secure applications.
