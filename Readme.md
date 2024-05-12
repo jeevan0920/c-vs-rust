@@ -158,7 +158,7 @@ int main(int argc, char * argv[])
 }
 ```
 
-## Avoid vulnerablites using Rust
+## Avoiding vulnerabilities using Rust
 
 Rust language features inherently prevent common vulnerabilities present in C/C++ code. Rust's safety features include ownership rules, borrowing, and lifetimes, which eliminate many bugs that are common in systems programming.
 
